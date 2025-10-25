@@ -12,7 +12,7 @@ SRC_DIR = src/
 MLX_DIR = minilibx-linux/
 
 MLX_LIB = $(MLX_DIR)libmlx.a
-LIB_FLAG = -Lminilibx-linux -lmlx_Linux -lXext -lX11 -lm -lz
+# LIB_FLAG = -Lminilibx-linux -lmlx -lXext -lX11 -lm -lz
 
 
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:%.c=%.o))
@@ -43,4 +43,4 @@ $(NAME): $(OBJ) | $(OBJ_DIR)
 
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.c $(INC) | $(OBJ_DIR)
-	$(CC) -I$(MLX_DIR) $(CFLAGS) -c $< -o $@
+	$(CC) -I$(INC_DIR) -I$(MLX_DIR) $(CFLAGS) -c $< -o $@
