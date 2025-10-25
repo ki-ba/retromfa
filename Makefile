@@ -9,9 +9,13 @@ INCS = retromfa.h
 INC_DIR = inc/
 OBJ_DIR = .obj/
 SRC_DIR = src/
+MLX_DIR = minilibx-linux/
+
+MLX_LIB = $(MLX_DIR)libmlx.a
+LIB_FLAG = -Lminilibx-linux -lmlx_Linux -lXext -lX11 -lm -lz
+
 
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:%.c=%.o))
-
 
 .PHONY: all
 all: $(NAME)
@@ -27,12 +31,16 @@ fclean: clean
 .PHONY: re
 re: fclean all
 
+.PHONY: mlx
+mlx:
+	$(MAKE) -C $(MLX_DIR)
+
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(NAME): $(OBJ) | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(OBJ) -o $@
+	$(CC) $(CFLAGS) $(LIB_FLAG) $(OBJ) $(MLX_LIB) -o $@
 
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.c $(INC) | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -I$(MLX_DIR) $(CFLAGS) -c $< -o $@
