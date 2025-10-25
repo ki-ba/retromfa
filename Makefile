@@ -34,12 +34,12 @@ re: fclean
 
 .PHONY: mlx
 mlx:
-	$(MAKE) -C $(MLX_DIR)
+	@$(MAKE) -C $(MLX_DIR)
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(NAME): $(OBJ) | $(OBJ_DIR)
+$(NAME): $(OBJ) | $(OBJ_DIR) mlx
 	$(CC) $(CFLAGS) $(LIB_FLAG) $(OBJ) $(MLX_LIB) -o $@
 
 
