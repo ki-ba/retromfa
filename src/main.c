@@ -10,7 +10,7 @@
 #include <string.h>
 #include <X11/X.h>
 
-static void	pixel_put(t_image *img, int x, int y, unsigned int color)
+static void	pixel_put(t_image *img, int x, int y, const uint32_t color)
 {
 	char	*dst;
 
@@ -30,7 +30,7 @@ void	*build_img(void *mlx, t_image *img, int height, int width)
 	return (img->img);
 }
 
-void display_image_24(t_image img, const unsigned char *target)
+void display_image_24(t_image img, const uint8_t *target)
 {
 	if (img.width % 2)
 		img.width++;
@@ -38,32 +38,29 @@ void display_image_24(t_image img, const unsigned char *target)
 	int target_size = img.width * img.height * 3;
 	for (int j = 0; j < target_size; j += 3)
 	{
-		unsigned char b = target[j + 0];
-		unsigned char g = target[j + 1];
-		unsigned char r = target[j + 2];
-		unsigned int color = (r << 16) | (g << 8) | b;
+		uint8_t b = target[j + 0];
+		uint8_t g = target[j + 1];
+		uint8_t r = target[j + 2];
+		uint32_t color = (r << 16) | (g << 8) | b;
 
 		const int pixel = j / 3;
 		const int x = pixel % img.width;
 		const int y = pixel / img.width;
 		pixel_put(&img, x, y, color);
-
 	}
 }
 
-void display_image_16(t_image img, const unsigned char *target)
+void display_image_16(t_image img, const uint8_t *target)
 {
 	int target_size = img.width * img.height * 2;
-	uint8_t r, g, b = 0;
 
-	printf("size %d * %d\n", img.width, img.height);
 	for (int j = 0; j < target_size; j += 2)
 	{
-		r = ((target[j + 1] & 0b01111100) >> 2);
-		g = ((target[j + 1] & 0b00000011) << 3) | ((target[j + 0] & 0b11100000) >> 5);
-		b = ((target[j + 0] & 0b00011111));
+		const uint8_t r = ((target[j + 1] & 0b01111100) >> 2);
+		const uint8_t g = ((target[j + 1] & 0b00000011) << 3) | ((target[j + 0] & 0b11100000) >> 5);
+		const uint8_t b = ((target[j + 0] & 0b00011111));
 
-		unsigned int color = 8 * ((r << 16)| (g << 8) | b) ;
+		uint32_t color = 8 * ((r << 16)| (g << 8) | b) ;
 		const int pixel = j / 2;
 		const int x = pixel % img.width;
 		const int y = pixel / img.width;
@@ -100,48 +97,45 @@ int	main(int argc, char **argv)
 	}
 	void*		mlx = mlx_init();
 	void*		wind = mlx_new_window(mlx, WIN_WIDTH, WIND_HEIGHT, "test");
-	int		fd = open(argv[1], O_RDWR);
-	char		str[1147483];
-	const int	bytes_read = read(fd, str, 1147483);
-	uint32_t	target_flag = IMG_SIG_24;
-	uint32_t	target_flag2 = IMG_SIG_16;
-	if (target_flag == 0)
-	{
-		printf("no images found.\n");
-		return (1);
-	}
+	int			fd = open(argv[1], O_RDWR);
+	uint8_t		str[1500000];
+	const int	bytes_read = read(fd, str, 1500000);
+	uint32_t	target_flag_24 = IMG_SIG_24;
+	uint32_t	target_flag_15 = IMG_SIG_15;
 
 	int		x_display_offset = 0;
 	int		y_display_offset = 0;
 	int		highest_y = 0;
 	int		img_index = 0;
+
 	uint32_t	curr_flag = (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | (str[3]);
 
 	for (int i = 7; i < bytes_read; i++)
 	{
-		const unsigned char	curr_byte = str[i];
-		const unsigned char	tmp_height = str[i - 5];
-		unsigned char	tmp_width = str[i - 7];
+		const uint8_t	curr_byte = str[i];
+		const uint8_t	tmp_height = str[i - 5];
+		const uint8_t	tmp_width = str[i - 7];
 
 		curr_flag = (curr_flag << 8) | curr_byte;
-		if (curr_flag == target_flag || curr_flag == target_flag2)
+		if (curr_flag == target_flag_24 || curr_flag == target_flag_15)
 			img_index++;
-		if ((curr_flag == target_flag || curr_flag == target_flag2) && img_index >= 0)
+		if ((curr_flag == target_flag_24 || curr_flag == target_flag_15) && img_index >= 0)
 		{
+			if (tmp_width <= 0 || tmp_height <= 0)
+				continue;
 			printf("goal !! img:%d\n", img_index);
-			t_image img;
-			if (build_img(mlx, &img, tmp_height, tmp_width) == NULL)
-			{
-				free_mlx(mlx, wind);
-				exit(EXIT_FAILURE);
-			}
+			printf("size %d * %d\n", tmp_width, tmp_height);
 
-			static int offset = 13;
-			const unsigned char *target_item = (unsigned char *)str + i + offset;
-			if (curr_flag == IMG_SIG_16)
+			t_image img;
+			build_img(mlx, &img, tmp_height, tmp_width);
+
+			const int offset = 13;
+			const uint8_t *target_item = (uint8_t *)str + i + offset;
+			if (curr_flag == IMG_SIG_15)
 				display_image_16(img, target_item);
 			else
 				display_image_24(img, target_item);
+
 			if (img.height > highest_y)
 				highest_y = img.height;
 			if (x_display_offset + img.width >= WIN_WIDTH)
@@ -149,15 +143,9 @@ int	main(int argc, char **argv)
 				y_display_offset += highest_y;
 				highest_y = 0;
 				x_display_offset = 0;
-				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
-				x_display_offset = x_display_offset + img.width + 30;
-
 			}
-			else
-			{
-				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
-				x_display_offset = x_display_offset + img.width + 30;
-			}
+			mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
+			x_display_offset = x_display_offset + img.width + 30;
 			// i += j;
 		}
 	}
