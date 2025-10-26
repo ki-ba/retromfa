@@ -13,7 +13,7 @@
 #ifndef RETROMFA_H
 # define RETROMFA_H
 
-# define USAGE_MSG "Usage: %s file_1.mfa ... file_n.mfa\n"
+# define USAGE_MSG "Usage: input_file.mfa\n"
 # define FILE_ERR_MSG "Error opening file"
 # define BUFFER_SIZE 16
 # define USAGE 2

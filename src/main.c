@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -36,7 +37,7 @@ void display_image_24(t_image img, const unsigned char *target)
 		img.width++;
 
 	int target_size = img.width * img.height * 3;
-	for (int j = 0; j < target_size; j += 3)
+	for (int j = 0; j < target_size - 2; j += 3)
 	{
 		unsigned char b = target[j + 0];
 		unsigned char g = target[j + 1];
@@ -51,13 +52,21 @@ void display_image_24(t_image img, const unsigned char *target)
 	}
 }
 
+size_t	get_file_size(char path[])
+{
+	struct stat	file_stat;
+	if (stat(path, &file_stat) == -1)
+		return (0);
+	return (file_stat.st_size);
+}
+
 void display_image_16(t_image img, const unsigned char *target)
 {
 	int target_size = img.width * img.height * 2;
 	uint8_t r, g, b = 0;
 
 	printf("size %d * %d\n", img.width, img.height);
-	for (int j = 0; j < target_size; j += 2)
+	for (int j = 0; j < target_size - 1; j += 2)
 	{
 		r = ((target[j + 1] & 0b01111100) >> 2);
 		g = ((target[j + 1] & 0b00000011) << 3) | ((target[j + 0] & 0b11100000) >> 5);
@@ -70,6 +79,7 @@ void display_image_16(t_image img, const unsigned char *target)
 		pixel_put(&img, x, y, color);
 	}
 }
+
 int free_mlx(void *mlx, void *wind)
 {
 	if (wind != NULL && mlx != NULL)
@@ -101,15 +111,12 @@ int	main(int argc, char **argv)
 	void*		mlx = mlx_init();
 	void*		wind = mlx_new_window(mlx, WIN_WIDTH, WIND_HEIGHT, "test");
 	int		fd = open(argv[1], O_RDWR);
-	char		str[1147483];
-	const int	bytes_read = read(fd, str, 1147483);
+	if (fd < 0)
+		return (1);
+	unsigned char *str = calloc(sizeof(unsigned char), get_file_size(argv[1]));
+	const int	bytes_read = read(fd, str, get_file_size(argv[1]));
 	uint32_t	target_flag = IMG_SIG_24;
 	uint32_t	target_flag2 = IMG_SIG_16;
-	if (target_flag == 0)
-	{
-		printf("no images found.\n");
-		return (1);
-	}
 
 	int		x_display_offset = 0;
 	int		y_display_offset = 0;
@@ -120,14 +127,16 @@ int	main(int argc, char **argv)
 	for (int i = 7; i < bytes_read; i++)
 	{
 		const unsigned char	curr_byte = str[i];
-		const unsigned char	tmp_height = str[i - 5];
-		unsigned char	tmp_width = str[i - 7];
 
 		curr_flag = (curr_flag << 8) | curr_byte;
 		if (curr_flag == target_flag || curr_flag == target_flag2)
 			img_index++;
 		if ((curr_flag == target_flag || curr_flag == target_flag2) && img_index >= 0)
 		{
+			unsigned char	tmp_height = str[i - 5];
+			unsigned char		tmp_width = str[i - 7];
+			if (tmp_width == 0 || tmp_height == 0)
+				continue;
 			printf("goal !! img:%d\n", img_index);
 			t_image img;
 			if (build_img(mlx, &img, tmp_height, tmp_width) == NULL)
@@ -151,7 +160,6 @@ int	main(int argc, char **argv)
 				x_display_offset = 0;
 				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
 				x_display_offset = x_display_offset + img.width + 30;
-
 			}
 			else
 			{
