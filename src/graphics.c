@@ -82,20 +82,14 @@ uint32_t	fill_img(int is_24, t_image *img, const uint8_t *target)
 	return (j);
 }
 
-void	display_img(void *mlx, void *wind, t_image *img)
+void	display_img(void *mlx, void *wind, t_image *img, int offsets[3], int scroll_mod)
 {
-	static int	x_display_offset = 0;
-	static int	y_display_offset = 0;
-	static int	highest_y = 0;
 
-	if (img->height > highest_y)
-		highest_y = img->height;
-	if (x_display_offset + img->width >= WIN_WIDTH)
-	{
-		y_display_offset += highest_y;
-		highest_y = 0;
-		x_display_offset = 0;
-	}
-	mlx_put_image_to_window(mlx, wind, img->img, x_display_offset, y_display_offset);
-	x_display_offset = x_display_offset + img->width + 30;
+	int x_display_offset = offsets[0];
+	int y_display_offset = offsets[1];
+
+	// y_display_offset += scroll_mod;
+	(void)scroll_mod;
+
+		mlx_put_image_to_window(mlx, wind, img->img, x_display_offset, y_display_offset);
 }

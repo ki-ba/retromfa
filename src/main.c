@@ -10,10 +10,37 @@
 
 size_t	get_file_size(const char filename[])
 {
+
 	struct stat	file_stat;
 	if (stat(filename, &file_stat) == -1)
 		return (0);
 	return (file_stat.st_size);
+}
+
+void	display_images(t_image imgs[], int img_count, void *mlx, void *wind, int scroll_mod)
+{
+	static int initial_scroll = 0;
+
+	initial_scroll += scroll_mod;
+	int	x_display_offset = PADDING_SIDES;
+	int	y_display_offset = PADDING_SIDES + initial_scroll;
+	int	highest_y = PADDING_SIDES;
+
+	for (int i = 0; i < img_count; i++)
+	{
+		if (imgs[i].height > highest_y)
+			highest_y = imgs[i].height;
+		if (x_display_offset + imgs[i].width >= WIN_WIDTH - PADDING_SIDES)
+		{
+			y_display_offset += highest_y;
+			// highest_y = 0;
+			x_display_offset = PADDING_SIDES;
+		}
+		int offsets[3] = {x_display_offset, y_display_offset, highest_y};
+		display_img(mlx, wind, &imgs[i], offsets, scroll_mod);
+		x_display_offset += imgs[i].width;
+		x_display_offset += PADDING_SIDES / 2;
+	}
 }
 
 int	main(int argc, char **argv)
@@ -72,22 +99,18 @@ int	main(int argc, char **argv)
 				mlx_loop_end(mlx);
 				break ;
 			}
-			//const uint8_t *target_item = str + i + OFFSET;
-			//if (curr_flag == IMG_SIG_15)
-			//	img_size = fill_img_15bit_color(img, target_item);
-			//else
-			//	img_size = fill_img_24bit_color(img, target_item);
 			uint32_t img_size = fill_img(curr_flag == IMG_SIG_24, img, str + i + OFFSET);
-			display_img(mlx, wind, img);
 
 			i += img_size + OFFSET;
 			img_index++;
 		}
 	}
+	display_images(imgs, img_index, mlx, wind, 0);
 	printf("%d images found\n", img_index);
 	void	*params[2] = {mlx, wind};
 	mlx_hook(wind, DestroyNotify, ResizeRedirectMask, &stop_loop, params);
 	mlx_hook(wind, KeyPress, KeyPressMask, &key_hook, params);
+	mlx_hook(wind, ButtonPress, ButtonPressMask, &scroll_hook, (void *[]){mlx, wind, imgs, &img_index});
 	mlx_loop(mlx);
 	for (int i = 0; i < img_index; i++)
 		mlx_destroy_image(mlx, imgs[i].img);

@@ -42,3 +42,25 @@ int	key_hook(int keycode, void *params[])
 		mlx_loop_end(mlx);
 	return (0);
 }
+
+int scroll_hook(int keycode, int x, int y, void *params[])
+{
+	void	*mlx = params[0];
+	void	*wind = params[1];
+	t_image	*imgs = params[2];
+	int		count = *((int *)params[3]);
+
+	(void) mlx;
+	(void) x;
+	(void) y;
+	(void) wind;
+
+	if(keycode == 4 || keycode == 5)
+		mlx_clear_window(mlx, wind);
+	if (keycode == 4) // Scroll up
+		display_images(imgs, count, mlx, wind, 50);
+	else if (keycode == 5) // Scroll down
+		display_images(imgs, count, mlx, wind, -50);
+
+	return (0);
+}
