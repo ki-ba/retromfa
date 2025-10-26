@@ -1,5 +1,6 @@
 #include "retromfa.h"
 #include "mlx.h"
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <fcntl.h>
@@ -7,7 +8,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <X11/X.h>
 
 static void	pixel_put(t_image *img, int x, int y, unsigned int color)
 {
@@ -17,13 +18,16 @@ static void	pixel_put(t_image *img, int x, int y, unsigned int color)
 	*(unsigned int *)dst = color;
 }
 
-void	build_img(void *mlx, t_image *img, int height, int width)
+void	*build_img(void *mlx, t_image *img, int height, int width)
 {
 	img->height = height;
 	img->width = width;
 	img->img = mlx_new_image(mlx, img->width, img->height);
+	if (img->img == NULL)
+		return (NULL);
 	img->addr = mlx_get_data_addr(img->img, &img->bpp, &img->len_line, &img->endian);
 	img->bpp /= 8;
+	return (img->img);
 }
 
 void display_image_24(t_image img, const unsigned char *target)
@@ -66,6 +70,26 @@ void display_image_16(t_image img, const unsigned char *target)
 		pixel_put(&img, x, y, color);
 	}
 }
+int free_mlx(void *mlx, void *wind)
+{
+	if (wind != NULL && mlx != NULL)
+		mlx_destroy_window(mlx, wind);
+	if (mlx != NULL)
+	{
+		mlx_destroy_display(mlx);
+		free(mlx);
+	}
+	return (1);
+}
+
+int	clean_exit(void *args[])
+{
+	void *mlx = args[0];
+	void *wind = args[1];
+	mlx_loop_end(mlx);
+	free_mlx(mlx, wind);
+	return (0);
+}
 
 int	main(int argc, char **argv)
 {
@@ -81,7 +105,6 @@ int	main(int argc, char **argv)
 	const int	bytes_read = read(fd, str, 1147483);
 	uint32_t	target_flag = IMG_SIG_24;
 	uint32_t	target_flag2 = IMG_SIG_16;
-
 	if (target_flag == 0)
 	{
 		printf("no images found.\n");
@@ -107,7 +130,11 @@ int	main(int argc, char **argv)
 		{
 			printf("goal !! img:%d\n", img_index);
 			t_image img;
-			build_img(mlx, &img, tmp_height, tmp_width);
+			if (build_img(mlx, &img, tmp_height, tmp_width) == NULL)
+			{
+				free_mlx(mlx, wind);
+				exit(EXIT_FAILURE);
+			}
 
 			static int offset = 13;
 			const unsigned char *target_item = (unsigned char *)str + i + offset;
@@ -131,7 +158,7 @@ int	main(int argc, char **argv)
 				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
 				x_display_offset = x_display_offset + img.width + 30;
 			}
-			i += 50;
+			// i += j;
 		}
 	}
 	mlx_loop(mlx);
