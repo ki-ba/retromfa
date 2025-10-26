@@ -3,6 +3,7 @@
 
 # define USAGE_MSG "Usage: ./retromfa input_file.mfa\n"
 # define FILE_ERR_MSG "Error opening file\n"
+# define READ_ERR_MSG "Error reading file\n"
 # define MEM_ERR_MSG "Memory allocation error\n"
 # define WRONG_USAGE_EXIT_STATUS 2
 # define IMG_SIG_24 0x04100000
@@ -25,6 +26,18 @@ typedef struct s_image
 	int		height;
 }	t_image;
 
+typedef union u_color
+{
+	struct
+	{
+		uint8_t	b;
+		uint8_t	g;
+		uint8_t	r;
+		uint8_t	a;
+	};
+	uint32_t	color;
+}	t_color;
+
 // PROTOTYPES
 
 // ERROR.C
@@ -38,6 +51,13 @@ void	*build_img(void *mlx, t_image *img, int height, int width);
 void	pixel_put(t_image *img, int x, int y, uint32_t color);
 
 // GRAPHICS.C
-uint32_t	fill_img_15bit_color(t_image img, const uint8_t *target);
-uint32_t	fill_img_24bit_color(t_image img, const uint8_t *target);
+uint32_t	fill_img_15bit_color(t_image *img, const uint8_t *target);
+uint32_t	fill_img_24bit_color(t_image *img, const uint8_t *target);
+uint32_t	fill_img(int is_24, t_image *img, const uint8_t *target);
+void		display_img(void *mlx, void *wind, t_image *img);
+
+// MLX_UTILS.C
+int	stop_loop(void *params[]);
+int	key_hook(int keycode, void *params[]);
+
 #endif

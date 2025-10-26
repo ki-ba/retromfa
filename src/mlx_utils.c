@@ -22,3 +22,23 @@ void	*build_img(void *mlx, t_image *img, int height, int width)
 	return (img->img);
 }
 
+int	stop_loop(void *params[])
+{
+	void	*mlx = params[0];
+	void	*wind = params[1];
+	(void) wind;
+
+	mlx_loop_end(mlx);
+	return (0);
+}
+
+int	key_hook(int keycode, void *params[])
+{
+	void	*mlx = params[0];
+	void	*wind = params[1];
+	(void) wind;
+
+	if (keycode == 65307)
+		mlx_loop_end(mlx);
+	return (0);
+}
