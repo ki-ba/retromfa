@@ -26,12 +26,6 @@ void	build_img(void *mlx, t_image *img, int height, int width)
 	img->bpp /= 8;
 }
 
-unsigned char reverse(unsigned char b) {
-   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
-   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
-   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
-   return b;
-}
 void display_image_24(t_image img, const unsigned char *target)
 {
 	if (img.width % 2)
@@ -56,20 +50,16 @@ void display_image_24(t_image img, const unsigned char *target)
 void display_image_16(t_image img, const unsigned char *target)
 {
 	int target_size = img.width * img.height * 2;
+	uint8_t r, g, b = 0;
 
+	printf("size %d * %d\n", img.width, img.height);
 	for (int j = 0; j < target_size; j += 2)
 	{
-		unsigned char b = 8 *((target[j + 0] & 0b11111000) >> 3);
-		unsigned char g = 8 * (((target[j + 0] & 0b00000111) << 2) | ((target[j + 1] & 0b11000000) >> 6));
-		unsigned char r = 8 *((target[j + 1] & 0b00111110) >> 1);
+		r = ((target[j + 1] & 0b01111100) >> 2);
+		g = ((target[j + 1] & 0b00000011) << 3) | ((target[j + 0] & 0b11100000) >> 5);
+		b = ((target[j + 0] & 0b00011111));
 
-		// r = reverse(r);
-		// g = reverse(g);
-		// b = reverse(b);
-
-		if (r && g && b)
-			printf("%hhu %hhu %hhu\n\n\n\n\n", r, g, b);
-		unsigned int color = ((r << 16)| (g << 8) | b) ;
+		unsigned int color = 8 * ((r << 16)| (g << 8) | b) ;
 		const int pixel = j / 2;
 		const int x = pixel % img.width;
 		const int y = pixel / img.width;
@@ -77,32 +67,43 @@ void display_image_16(t_image img, const unsigned char *target)
 	}
 }
 
-int	main(void)
+int	main(int argc, char **argv)
 {
-	void* mlx = mlx_init();
-	void* wind = mlx_new_window(mlx, WIN_WIDTH, WIND_HEIGHT, "test");
-	(void)wind;
-	int fd = open("file/white2.mfa", O_RDWR);
-	char str[1147483];
-	const int bytes_read = read(fd, str, 1147483);
-	const uint32_t target_flag = 0x06100000;
+	if (argc != 2)
+	{
+		printf("%s", USAGE_MSG);
+		return (1);
+	}
+	void*		mlx = mlx_init();
+	void*		wind = mlx_new_window(mlx, WIN_WIDTH, WIND_HEIGHT, "test");
+	int		fd = open(argv[1], O_RDWR);
+	char		str[1147483];
+	const int	bytes_read = read(fd, str, 1147483);
+	uint32_t	target_flag = IMG_SIG_24;
+	uint32_t	target_flag2 = IMG_SIG_16;
 
+	if (target_flag == 0)
+	{
+		printf("no images found.\n");
+		return (1);
+	}
 
-	int	x_display_offset = 0;
-	int	y_display_offset = 0;
-	int highest_y = 0;
-	int img_index = 0;
-	uint32_t curr_flag = (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | (str[3]);
-	for (int i = 100; i < bytes_read; i++)
+	int		x_display_offset = 0;
+	int		y_display_offset = 0;
+	int		highest_y = 0;
+	int		img_index = 0;
+	uint32_t	curr_flag = (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | (str[3]);
+
+	for (int i = 7; i < bytes_read; i++)
 	{
 		const unsigned char	curr_byte = str[i];
 		const unsigned char	tmp_height = str[i - 5];
 		unsigned char	tmp_width = str[i - 7];
 
 		curr_flag = (curr_flag << 8) | curr_byte;
-		if (curr_flag == target_flag)
+		if (curr_flag == target_flag || curr_flag == target_flag2)
 			img_index++;
-		if (curr_flag == target_flag && img_index >= 0)
+		if ((curr_flag == target_flag || curr_flag == target_flag2) && img_index >= 0)
 		{
 			printf("goal !! img:%d\n", img_index);
 			t_image img;
@@ -110,7 +111,7 @@ int	main(void)
 
 			static int offset = 13;
 			const unsigned char *target_item = (unsigned char *)str + i + offset;
-			if (target_flag == IMG_SIG_16)
+			if (curr_flag == IMG_SIG_16)
 				display_image_16(img, target_item);
 			else
 				display_image_24(img, target_item);
@@ -130,7 +131,7 @@ int	main(void)
 				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
 				x_display_offset = x_display_offset + img.width + 30;
 			}
-			// i += j;
+			i += 50;
 		}
 	}
 	mlx_loop(mlx);
