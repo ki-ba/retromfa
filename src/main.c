@@ -62,6 +62,11 @@ int	main(int argc, char **argv)
 	}
 
 	const size_t	file_size = get_file_size(argv[1]);
+	if (file_size == 0)
+	{
+		close(fd);
+		return (1);
+	}
 	uint8_t			*str = calloc(sizeof(uint8_t), file_size);
 	if (str == NULL)
 	{
