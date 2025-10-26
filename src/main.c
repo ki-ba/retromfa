@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -18,7 +19,9 @@ size_t	get_file_size(const char filename[])
 
 int	main(int argc, char **argv)
 {
-	if (argc != 2)
+	int len = 0;
+	if (argc != 2
+		|| (len = strlen(argv[1])) < 4 || strncmp(argv[1] + len - 4, ".mfa", 4) != 0)
 	{
 		printf(USAGE_MSG);
 		return (WRONG_USAGE_EXIT_STATUS);
@@ -49,7 +52,19 @@ int	main(int argc, char **argv)
 	}
 
 	void*		mlx = mlx_init();
+	if (mlx == NULL)
+	{
+		free(str);
+		return (1);
+	}
 	void*		wind = mlx_new_window(mlx, WIN_WIDTH, WIND_HEIGHT, "RetroMFA Viewer");
+	if (wind == NULL)
+	{
+		mlx_destroy_display(mlx);
+		free(mlx);
+		free(str);
+		return (1);
+	}
 	int			img_index = 0;
 	t_image		imgs[1000];
 
