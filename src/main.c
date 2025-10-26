@@ -131,8 +131,7 @@ int main(void)
 	{
 		const unsigned char	curr_byte = str[i];
 		const unsigned char	tmp_height = str[i - 5];
-		const unsigned char	tmp_width = str[i - 7];
-
+		unsigned char	tmp_width = str[i - 7];
 
 		curr_flag = (curr_flag << 8) | curr_byte;
 		if (curr_flag == target_flag)
@@ -141,18 +140,20 @@ int main(void)
 		{
 			printf("goal !! img:%d\n", img_index);
 			t_image img;
+			if (tmp_width % 2)
+				tmp_width++;
 			build_img(mlx, &img, tmp_height, tmp_width);
 
 			const int bytes_size = img.height * img.width * 3;
-			const int offset = 13;
-			const unsigned char *target_item = (unsigned char *)&str[i + offset];
-			for (int j = 0; j < bytes_size; j += 3)
+			static int offset = 13;
+			const unsigned char *target_item = (unsigned char *)str + i + offset;
+			int j;
+			for (j = 0; j < bytes_size; j += 3)
 			{
 				unsigned char b = target_item[j + 0];
 				unsigned char g = target_item[j + 1];
 				unsigned char r = target_item[j + 2];
-				unsigned int color = (r << 16) | (g << 8) | (b << 0);
-
+				unsigned int color = (r << 16) | (g << 8) | b;
 
 				const int pixel = j / 3;
 				const int x = pixel % img.width;
@@ -164,18 +165,19 @@ int main(void)
 				highest_y = img.height;
 			if (x_display_offset + img.width >= WIN_WIDTH)
 			{
-
 				y_display_offset += highest_y;
 				highest_y = 0;
 				x_display_offset = 0;
 				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
+				x_display_offset = x_display_offset + img.width + 30;
+
 			}
 			else
 			{
 				mlx_put_image_to_window(mlx, wind, img.img, x_display_offset, y_display_offset);
 				x_display_offset = x_display_offset + img.width + 30;
 			}
-
+			i += j;
 		}
 	}
 	mlx_loop(mlx);
