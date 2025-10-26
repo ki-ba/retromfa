@@ -3,7 +3,7 @@ NAME = retromfa
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -g
 
-SRC = main.c
+SRC = main.c graphics.c mlx_utils.c error.c
 INCS = retromfa.h
 
 INC_DIR = inc/
