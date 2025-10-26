@@ -17,6 +17,20 @@
 # define FILE_ERR_MSG "Error opening file"
 # define BUFFER_SIZE 16
 # define USAGE 2
-# define IMG_SIG_1 "\x06\x10\x00\x00"
-# define IMG_SIG_2 "\x04\x10\x00\x00"
+# define IMG_SIG_24 0x04100000
+# define IMG_SIG_16 0x06100000
+# define WIND_HEIGHT 1080
+# define WIN_WIDTH WIND_HEIGHT * (16. / 9.)
+
+typedef struct s_image
+{
+	void	*img;
+	char	*addr;
+	int		bpp;
+	int		len_line;
+	int		endian;
+	int		width;
+	int		height;
+}	t_image;
+
 #endif
