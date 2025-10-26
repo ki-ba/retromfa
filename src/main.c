@@ -72,11 +72,6 @@ int	main(int argc, char **argv)
 				mlx_loop_end(mlx);
 				break ;
 			}
-			//const uint8_t *target_item = str + i + OFFSET;
-			//if (curr_flag == IMG_SIG_15)
-			//	img_size = fill_img_15bit_color(img, target_item);
-			//else
-			//	img_size = fill_img_24bit_color(img, target_item);
 			uint32_t img_size = fill_img(curr_flag == IMG_SIG_24, img, str + i + OFFSET);
 			display_img(mlx, wind, img);
 
