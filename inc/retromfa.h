@@ -54,8 +54,6 @@ void	pixel_put(t_image *img, int x, int y, uint32_t color);
 void	display_images(t_image imgs[], int img_count, void *mlx, void *wind, int scroll_mod);
 
 // GRAPHICS.C
-uint32_t	fill_img_15bit_color(t_image *img, const uint8_t *target);
-uint32_t	fill_img_24bit_color(t_image *img, const uint8_t *target);
 uint32_t	fill_img(int is_24, t_image *img, const uint8_t *target);
 void		display_img(void *mlx, void *wind, t_image *img, int offsets[3], int scroll_mod);
 
